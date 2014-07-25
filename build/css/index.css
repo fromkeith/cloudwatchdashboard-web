@@ -5,9 +5,25 @@
   height: 10px;
   width: 100%;
 }
-#legend #entry {
+#entrySection #entry {
   display: inline-block;
   width: 400px;
   vertical-align: top;
   margin: 10px;
+}
+.grapharea .leftAxis {
+  position: absolute;
+  top: 50px;
+  bottom: 0;
+  width: 40px;
+}
+.grapharea .graph {
+  position: absolute;
+  left: 40px;
+  top: 50px;
+}
+.graphContainer {
+  position: relative;
+  height: 800px;
+  width: 600px;
 }

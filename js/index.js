@@ -46,10 +46,10 @@ require(["jquery", "js/graph"], function ($, grapher) {
 
     function namespaceClicked(e) {
         var namespace = $(this).text(),
-            metricRoot = $("#menu #metrics"),
+            metricRoot = $("#metricList #metrics"),
             i,
             metricList = knownNamespaces[namespace];
-        $("#menu #namespacesTab").slideUp(400);
+        $("#metricList #namespacesTab").slideUp(400);
         metricRoot.empty();
         for (i = 0; i < metricList.length; i++) {
             metricRoot.append(
@@ -61,7 +61,7 @@ require(["jquery", "js/graph"], function ($, grapher) {
             );
         }
         metricRoot.trigger("updatelayout");
-        $("#menu #metricsTab").slideDown(400);
+        $("#metricList #metricsTab").slideDown(400);
         return;
     }
 
@@ -76,7 +76,7 @@ require(["jquery", "js/graph"], function ($, grapher) {
     }
 
     function fillInMenuItems() {
-        var root = $("#menu #namespaces"),
+        var root = $("#metricList #namespaces"),
             i;
         namespaceList.sort(alphaSort);
         for (i = 0; i < namespaceList.length; i++) {
@@ -188,9 +188,9 @@ require(["jquery", "js/graph"], function ($, grapher) {
             getMetrics: getMetrics,
             save: saveGraph
         };
-        $("#menu #backToNamespaces").on("tap", function () {
-            $("#menu #metricsTab").slideUp(400);
-            $("#menu #namespacesTab").slideDown(400);
+        $("#metricList #backToNamespaces").on("tap", function () {
+            $("#metricList #metricsTab").slideUp(400);
+            $("#metricList #namespacesTab").slideDown(400);
         });
         $("#addGraph").on("tap", function () {
             var g = grapher.newGraph(dataStore),
@@ -199,6 +199,8 @@ require(["jquery", "js/graph"], function ($, grapher) {
             g.setTime(start, end, 60);
             $("#graphs").append(g.getRoot()).trigger("create");
         });
+    }).on("pagebeforeshow", "#menu", function (e) {
+        $("#metricList").hide();
     });
     return;
 });

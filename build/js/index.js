@@ -20,86 +20,91 @@ define('js/graph',["jquery"], function ($) {
         "#F56D68"
     ];
 
-    function formatDate(d) {
-        return d.toLocaleTimeString("US", {localMatcher: "best fit"});
-    }
+    //function formatDate(d) {
+    //    return d.toLocaleTimeString("US", {localMatcher: "best fit"});
+    //}
 
     function drawGraph() {
-        var ctx = this.m.canvas[0].getContext("2d"),
-            chart = new Chart(ctx),
-            xLabels = [],
-            xTime = [],
-            yVals = [],
-            i,
-            t,
-            j,
-            max,
-            min,
-            numSteps,
-            stepWidth,
-            graphingDataSet = [];
-        for (j = 0; j < this.m.dataSets.length; j++) {
-            yVals[j] = [];
+        var i,
+            j;
+        for (j = this.m.chart.data.length; j < this.m.dataSets.length; j++) {
+            this.m.chart.data.push([]);
+            this.m.chart.series.push({});
         }
-        for (i = this.m.startTime; i < this.m.endTime; i += this.m.period * 1000) {
-            xTime.push(i / 1000);
-            xLabels.push(formatDate(new Date(i)));
-            for (j = 0; j < this.m.dataSets.length; j++) {
-                yVals[j].push(null);
-            }
+        if (this.m.dataSets.length < this.m.chart.data.length) {
+            this.m.chart.data.splice(this.m.dataSets.length);
+            this.m.chart.series.splice(this.m.dataSets.length);
         }
-
         for (j = 0; j < this.m.dataSets.length; j++) {
-            t = 0;
             if (this.m.dataSets[j].data.Datapoints === undefined) {
                 continue;
             }
+            this.m.chart.data[j].splice(0);
             for (i = 0; i < this.m.dataSets[j].data.Datapoints.length; i++) {
-                while (true) {
-                    if (t >= xTime.length) {
-                        break;
-                    }
-                    if (this.m.dataSets[j].data.Datapoints[i].Time <= xTime[t]) {
-                        yVals[j][t] = this.m.dataSets[j].data.Datapoints[i].Value;
-                        if (max === undefined || this.m.dataSets[j].data.Datapoints[i].Value > max) {
-                            max = this.m.dataSets[j].data.Datapoints[i].Value;
-                        }
-                        if (min === undefined || this.m.dataSets[j].data.Datapoints[i].Value < min) {
-                            min = this.m.dataSets[j].data.Datapoints[i].Value;
-                        }
-                        break;
-                    }
-                    t++;
-                }
+                this.m.chart.data[j].push({
+                    x: this.m.dataSets[j].data.Datapoints[i].Time,
+                    y: this.m.dataSets[j].data.Datapoints[i].Value
+                });
             }
-            graphingDataSet.push({
-                strokeColor : this.m.dataSets[j].color,
-                pointColor :  this.m.dataSets[j].color,
-                pointStrokeColor:  this.m.dataSets[j].color,
-                data : yVals[j],
-                opposite: true
-            });
+
+            this.m.chart.series[j].color = this.m.dataSets[j].color;
+            this.m.chart.series[j].name = this.m.dataSets[j].search.Metric + " " + this.m.dataSets[j].search.Dimension;
+            this.m.chart.series[j].data = this.m.chart.data[j];
         }
-        max += 1;
-        min -= 1;
-        stepWidth = Math.ceil(Math.abs(max - min) / 20);
-        numSteps = Math.ceil(Math.abs(max - min) / stepWidth);
-        chart.Line({
-            labels : xLabels,
-            datasets : graphingDataSet
-        }, {
-            animation : false,
-            scaleOverride : true,
-            scaleSteps : numSteps,
-            scaleStepWidth : stepWidth,
-            scaleStartValue : min,
-            datasetStrokeWidth : 1,
-            datasetStroke : true,
-            pointDotRadius : 2,
-            pointDotStrokeWidth: 1,
-            pointDot: true,
-            datasetFill : false
+        this.m.chart.graphContainer.show();
+        if (this.m.chart.graph === undefined) {
+            this.m.chart.graph = new Rickshaw.Graph({
+                element: this.m.chart.main[0],
+                series: this.m.chart.series,
+                width: this.m.display.width,
+                height: this.m.display.height,
+                renderer: "line"
+            });
+            this.m.chart.graph.render();
+        } else {
+            this.m.chart.graph.update();
+            this.m.chart.y_ticks.render();
+            this.m.chart.x_axis.render();
+            this.m.chart.c_legend.render();
+            this.m.chart.shelving = new Rickshaw.Graph.Behavior.Series.Toggle({
+                graph: this.m.chart.graph,
+                legend: this.m.chart.c_legend
+            });
+            return;
+        }
+
+        this.m.chart.y_ticks = new Rickshaw.Graph.Axis.Y({
+            graph: this.m.chart.graph,
+            orientation: 'left',
+            tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
+            height: this.m.display.height,
+            width: 40,
+            element: this.m.chart.leftAxis[0]
         });
+        this.m.chart.y_ticks.render();
+
+        this.m.chart.c_legend = new Rickshaw.Graph.Legend({
+            graph: this.m.chart.graph,
+            element: this.m.chart.legend[0]
+        });
+
+        this.m.chart.x_axis = new Rickshaw.Graph.Axis.Time({
+            graph: this.m.chart.graph,
+            ticksTreatment: 'glow',
+            timeFixture: new Rickshaw.Fixtures.Time.Local()
+        });
+        this.m.chart.x_axis.render();
+        this.m.chart.hoverDetail = new Rickshaw.Graph.HoverDetail({
+            graph: this.m.chart.graph,
+            xFormatter: function (x) {
+                return new Date(x * 1000).toString();
+            }
+        });
+        this.m.chart.shelving = new Rickshaw.Graph.Behavior.Series.Toggle({
+            graph: this.m.chart.graph,
+            legend: this.m.chart.c_legend
+        });
+
     }
 
     function setDataGraph(graphObj, data) {
@@ -118,11 +123,11 @@ define('js/graph',["jquery"], function ($) {
     function addMetricGraph(graphObj) {
         var that = this,
             thisMetric = {Metric: "", Dimension: ""};
-        this.m.legend.append(
+        this.m.entrySection.append(
             $("<div />")
                 .attr("id", "entry")
                 .attr("data-mini", "true")
-                .css("width", 400)
+                .css("width", (400 < $(window).width()) ? 400 : $(window).width() * 0.7)
                 .append(
                     $("<div>")
                         .addClass("colorband")
@@ -237,18 +242,33 @@ define('js/graph',["jquery"], function ($) {
                         })
                 )
         );
-        this.m.legend.trigger("create");
+        this.m.entrySection.trigger("create");
     }
 
     function newGraph(dataStore) {
         var graph,
-            canvas = $("<canvas />").attr({width: "800px", height: "600px"}).css({"width": "800px", "height": 600}),
+            canvas = $("<div />").css({"width": "800px", "height": 600}),
             root = $("<div />"),
-            legend;
+            entrySection,
+            leftAxis = $("<div />"),
+            rightAxis = $("<div />"),
+            legend = $("<div />"),
+            graphContainer = $("<div />"),
+            windowWidth = $(window).width(),
+            windowHeight = $(window).height();
 
-        legend = $("<div />", {id : "legend"})
+        entrySection = $("<div />", {id : "entrySection"})
             .attr("data-role", "controlgroup")
             .attr("data-mini", "true");
+
+        graphContainer.css({
+            width: windowWidth * 0.7,
+            height: windowHeight * 0.8 + 50 // for top
+        });
+        canvas.css({
+            width: windowWidth * 0.7,
+            height: windowHeight * 0.8
+        });
 
         root.addClass("ui-corner-all custom-corners")
             .append(
@@ -261,6 +281,8 @@ define('js/graph',["jquery"], function ($) {
                             .addClass("ui-btn ui-btn-inline ui-mini ui-corner-all ui-icon-plus ui-btn-icon-left")
                             .on("tap", function () {
                                 graph.addMetric();
+                                $(this).parents(".ui-bar").find(".ui-icon-edit").text("Save").removeClass("ui-icon-edit").addClass("ui-icon-check");
+                                graph.m.entrySection.show();
                             })
                     )
                     .append(
@@ -269,47 +291,82 @@ define('js/graph',["jquery"], function ($) {
                             .on("tap", function () {
                                 var metrics = [],
                                     i,
-                                    saveObj;
-                                for (i = 0; i < graph.m.dataSets.length; i++) {
-                                    metrics.push(graph.m.dataSets[i].search);
+                                    saveObj,
+                                    btn = $(this);
+                                if (btn.text() === "Edit") {
+                                    btn.text("Save").removeClass("ui-icon-edit").addClass("ui-icon-check");
+                                    graph.m.entrySection.show();
+                                } else {
+                                    for (i = 0; i < graph.m.dataSets.length; i++) {
+                                        metrics.push(graph.m.dataSets[i].search);
+                                    }
+                                    saveObj = {
+                                        Metrics: metrics,
+                                        Name: "New Graph",
+                                        Time: {
+                                            Start: graph.m.startTime,
+                                            End: graph.m.endTime,
+                                            Period: graph.m.period
+                                        },
+                                        Id: graph.m.uuid
+                                    };
+                                    graph.m.dataStore.save(saveObj, function (uuid) {
+                                        graph.m.uuid = uuid;
+                                        btn.text("Edit").removeClass("ui-icon-check").addClass("ui-icon-edit");
+                                        graph.m.entrySection.hide();
+                                    }, function () {
+                                        alert("Error saving graph!");
+                                    });
                                 }
-                                saveObj = {
-                                    Metrics: metrics,
-                                    Name: "New Graph",
-                                    Time: {
-                                        Start: graph.m.startTime,
-                                        End: graph.m.endTime,
-                                        Period: graph.m.period
-                                    },
-                                    Id: graph.m.uuid
-                                };
-                                graph.m.dataStore.save(saveObj, function (uuid) {
-                                    graph.m.uuid = uuid;
-                                });
                             })
+                    )
+                    .append(
+                        legend
                     )
             )
             .append(
-                $("<div />").addClass("ui-body ui-body-a")
+                $("<div />").addClass("ui-body ui-body-a grapharea")
                     .append(
-                        canvas
-                    ).append(
-                        legend
+                        graphContainer.addClass("graphContainer")
+                            .append(
+                                leftAxis.addClass("leftAxis")
+                            )
+                            .append(
+                                canvas.addClass("graph")
+                            )
+                            .append(
+                                rightAxis
+                            ).hide()
+                    )
+                    .append(
+                        entrySection
                     )
             );
 
         graph = {
             m : {
                 root: root,
-                canvas: canvas,
-                legend: legend,
+                chart : {
+                    main: canvas,
+                    leftAxis: leftAxis,
+                    rightAxis: rightAxis,
+                    data: [],
+                    series: [],
+                    legend: legend,
+                    graphContainer: graphContainer
+                },
+                entrySection: entrySection,
                 dataSets: [],
                 startTime: 0,
                 endTime: 0,
                 period: 0,
                 dataStore: dataStore,
                 freeColors: colors.slice(),
-                uuid: ""
+                uuid: "",
+                display: {
+                    width: windowWidth * 0.7,
+                    height: windowHeight * 0.8
+                }
             },
             draw : function () {
                 return drawGraph.call(graph);
@@ -340,6 +397,7 @@ define('js/graph',["jquery"], function ($) {
                         return;
                     }
                 }
+                graph.draw();
             }
         };
         return graph;
@@ -397,10 +455,10 @@ require(["jquery", "js/graph"], function ($, grapher) {
 
     function namespaceClicked(e) {
         var namespace = $(this).text(),
-            metricRoot = $("#menu #metrics"),
+            metricRoot = $("#metricList #metrics"),
             i,
             metricList = knownNamespaces[namespace];
-        $("#menu #namespacesTab").slideUp(400);
+        $("#metricList #namespacesTab").slideUp(400);
         metricRoot.empty();
         for (i = 0; i < metricList.length; i++) {
             metricRoot.append(
@@ -412,7 +470,7 @@ require(["jquery", "js/graph"], function ($, grapher) {
             );
         }
         metricRoot.trigger("updatelayout");
-        $("#menu #metricsTab").slideDown(400);
+        $("#metricList #metricsTab").slideDown(400);
         return;
     }
 
@@ -427,7 +485,7 @@ require(["jquery", "js/graph"], function ($, grapher) {
     }
 
     function fillInMenuItems() {
-        var root = $("#menu #namespaces"),
+        var root = $("#metricList #namespaces"),
             i;
         namespaceList.sort(alphaSort);
         for (i = 0; i < namespaceList.length; i++) {
@@ -539,9 +597,9 @@ require(["jquery", "js/graph"], function ($, grapher) {
             getMetrics: getMetrics,
             save: saveGraph
         };
-        $("#menu #backToNamespaces").on("tap", function () {
-            $("#menu #metricsTab").slideUp(400);
-            $("#menu #namespacesTab").slideDown(400);
+        $("#metricList #backToNamespaces").on("tap", function () {
+            $("#metricList #metricsTab").slideUp(400);
+            $("#metricList #namespacesTab").slideDown(400);
         });
         $("#addGraph").on("tap", function () {
             var g = grapher.newGraph(dataStore),
@@ -550,6 +608,8 @@ require(["jquery", "js/graph"], function ($, grapher) {
             g.setTime(start, end, 60);
             $("#graphs").append(g.getRoot()).trigger("create");
         });
+    }).on("pagebeforeshow", "#menu", function (e) {
+        $("#metricList").hide();
     });
     return;
 });

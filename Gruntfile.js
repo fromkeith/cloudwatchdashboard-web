@@ -53,7 +53,7 @@ module.exports = function(grunt) {
                         "define", "window", "require",
                         "document", "console",
                         "clearTimeout", "setTimeout",
-                        "alert", "Chart"
+                        "alert", "Rickshaw"
                     ],
                     plusplus : true,
                     unparam : true,
