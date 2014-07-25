@@ -30,6 +30,9 @@ define(["jquery"], function ($) {
             this.m.chart.series.splice(this.m.dataSets.length);
         }
         for (j = 0; j < this.m.dataSets.length; j++) {
+            if (this.m.dataSets[j].data === undefined) {
+                continue;
+            }
             if (this.m.dataSets[j].data.Datapoints === undefined) {
                 continue;
             }
@@ -116,127 +119,183 @@ define(["jquery"], function ($) {
 
     function addMetricGraph(graphObj) {
         var that = this,
-            thisMetric = {Metric: "", Dimension: ""};
-        this.m.entrySection.append(
-            $("<div />")
-                .attr("id", "entry")
-                .attr("data-mini", "true")
-                .css("width", (400 < $(window).width()) ? 400 : $(window).width() * 0.7)
-                .append(
-                    $("<div>")
-                        .addClass("colorband")
-                        .css("background-color", graphObj.color)
-                )
-                .append(
-                    $("<ul />")
-                        .attr("data-role", "listview")
-                        .attr("data-inset", "true")
-                        .attr("data-filter", "true")
-                        .attr("data-filter-placeholder", "Namespace/Metric")
-                        .attr("data-mini", "true")
-                        .attr("reveal", "true")
-                        .on("filterablebeforefilter", function (e, data) {
-                            var ul = $(this),
-                                input = $(data.input),
-                                value = input.val(),
-                                metrics = that.m.dataStore.findMetrics(value),
-                                i;
+            thisMetric = {
+                Metric: "Namespace/Metric",
+                Dimension: "Dimension"
+            },
+            entry,
+            selectedDefault = "Average";
+        if (graphObj === undefined) {
+            graphObj = {
+                data: {}
+            };
+        } else {
+            thisMetric.Metric = graphObj.search.Metric;
+            thisMetric.Dimension = graphObj.search.Dimension;
+            selectedDefault = graphObj.search.Statistic;
+        }
+        graphObj.color = this.m.freeColors.pop();
+        this.m.dataSets.push(graphObj);
+
+        function createAndSelect(name) {
+            var selected = selectedDefault === name ? "selected" : "";
+            return $("<option value='" + name + "'" + selected + ">" + name + "</option>");
+        }
+
+        entry = $("<div />")
+            .attr("id", "entry")
+            .attr("data-mini", "true")
+            .css("width", (400 < $(window).width()) ? 400 : $(window).width() * 0.7)
+            .append(
+                $("<div>")
+                    .addClass("colorband")
+                    .css("background-color", graphObj.color)
+            )
+            .append(
+                $("<ul />")
+                    .attr("data-role", "listview")
+                    .attr("data-inset", "true")
+                    .attr("data-filter", "true")
+                    .attr("data-filter-placeholder", thisMetric.Metric)
+                    .attr("data-mini", "true")
+                    .attr("reveal", "true")
+                    .on("filterablebeforefilter", function (e, data) {
+                        var ul = $(this),
+                            input = $(data.input),
+                            value = input.val(),
+                            metrics = that.m.dataStore.findMetrics(value),
+                            i;
+                        ul.empty();
+                        function itemSelected() {
                             ul.empty();
-                            function itemSelected() {
-                                ul.empty();
-                                input.val($(this).text());
-                                thisMetric.Metric = $(this).text();
-                            }
-                            thisMetric.Metric = value;
-                            for (i = 0; i < metrics.length && i < 5; i++) {
-                                ul.append(
-                                    $("<li />", {text: metrics[i]})
-                                        .on("tap", itemSelected)
-                                );
-                            }
-                            return;
-                        }).on("filterablecreate", function (e, data) {
-                            var ul = $(this);
-                            $(data.input).on("focusout", function () {
-                                ul.empty();
-                            });
-                        })
-                )
-                .append(
-                    $("<ul />")
-                        .attr("data-role", "listview")
-                        .attr("data-inset", "true")
-                        .attr("data-filter", "true")
-                        .attr("data-filter-placeholder", "Dimension")
-                        .attr("data-mini", "true")
-                        .attr("reveal", "true")
-                        .on("filterablebeforefilter", function (e, data) {
-                            var ul = $(this),
-                                input = $(data.input),
-                                value = input.val(),
-                                metrics = that.m.dataStore.findDimension(thisMetric.Metric, value),
-                                i;
+                            input.val($(this).text());
+                            thisMetric.Metric = $(this).text();
+                        }
+                        thisMetric.Metric = value;
+                        for (i = 0; i < metrics.length && i < 5; i++) {
+                            ul.append(
+                                $("<li />", {text: metrics[i]})
+                                    .on("tap", itemSelected)
+                            );
+                        }
+                        return;
+                    }).on("filterablecreate", function (e, data) {
+                        var ul = $(this);
+                        $(data.input).on("focusout", function () {
                             ul.empty();
-                            function itemSelected() {
-                                ul.empty();
-                                input.val($(this).text());
-                                thisMetric.Dimension = $(this).text();
-                            }
-                            thisMetric.Dimension = value;
-                            for (i = 0; i < metrics.length && i < 10; i++) {
-                                ul.append(
-                                    $("<li />", {text: metrics[i]})
-                                        .on("tap", itemSelected)
-                                );
-                            }
-                            return;
-                        })
-                )
-                .append(
-                    $("<select />")
-                        .attr("data-mini", "true")
-                        .append(
-                            $("<option value='Average'>Average</option>")
-                        )
-                        .append(
-                            $("<option value='Sum'>Sum</option>")
-                        )
-                        .append(
-                            $("<option value='SampleCount'>SampleCount</option>")
-                        )
-                        .append(
-                            $("<option value='Maximum'>Maximum</option>")
-                        )
-                        .append(
-                            $("<option value='Minimum'>Minimum</option>")
-                        )
-                )
-                .append(
-                    $("<button />", {text: "Update"})
-                        .on("tap", function () {
-                            var root = $(this).parents("#entry"),
-                                stat = root.find("select").val();
-                            root.find("input").attr("disabled", "disabled");
-                            graphObj.search = {
-                                Metric: thisMetric.Metric,
-                                Dimension: thisMetric.Dimension,
-                                Statistic: stat
-                            };
-                            that.m.dataStore.getMetrics(graphObj.search, that.m.startTime, that.m.endTime, function (data) {
-                                root.find("input").removeAttr("disabled", "disabled");
-                                that.setData(graphObj, data);
-                                that.draw();
-                            });
-                        })
-                ).append(
-                    $("<button />", {text: "Remove"})
-                        .on("tap", function () {
-                            $(this).parents("#entry").remove();
-                            that.remove(graphObj);
-                        })
-                )
-        );
+                        });
+                    })
+            )
+            .append(
+                $("<ul />")
+                    .attr("data-role", "listview")
+                    .attr("data-inset", "true")
+                    .attr("data-filter", "true")
+                    .attr("data-filter-placeholder", thisMetric.Dimension)
+                    .attr("data-mini", "true")
+                    .attr("reveal", "true")
+                    .on("filterablebeforefilter", function (e, data) {
+                        var ul = $(this),
+                            input = $(data.input),
+                            value = input.val(),
+                            metrics = that.m.dataStore.findDimension(thisMetric.Metric, value),
+                            i;
+                        ul.empty();
+                        function itemSelected() {
+                            ul.empty();
+                            input.val($(this).text());
+                            thisMetric.Dimension = $(this).text();
+                        }
+                        thisMetric.Dimension = value;
+                        for (i = 0; i < metrics.length && i < 10; i++) {
+                            ul.append(
+                                $("<li />", {text: metrics[i]})
+                                    .on("tap", itemSelected)
+                            );
+                        }
+                        return;
+                    })
+            )
+            .append(
+                $("<select />")
+                    .attr("data-mini", "true")
+                    .append(
+                        createAndSelect("Average")
+                    )
+                    .append(
+                        createAndSelect("Sum")
+                    )
+                    .append(
+                        createAndSelect("SampleCount")
+                    )
+                    .append(
+                        createAndSelect("Maximum")
+                    )
+                    .append(
+                        createAndSelect("Minimum")
+                    )
+            )
+            .append(
+                $("<button />", {text: "Update"})
+                    .attr("id", "update")
+                    .on("tap", function () {
+                        var root = $(this).parents("#entry"),
+                            stat = root.find("select").val();
+                        root.find("input").attr("disabled", "disabled");
+                        graphObj.search = {
+                            Metric: thisMetric.Metric,
+                            Dimension: thisMetric.Dimension,
+                            Statistic: stat
+                        };
+                        that.m.dataStore.getMetrics(graphObj.search, that.m.startTime, that.m.endTime, function (data) {
+                            root.find("input").removeAttr("disabled", "disabled");
+                            that.setData(graphObj, data);
+                            that.draw();
+                        });
+                    })
+            ).append(
+                $("<button />", {text: "Remove"})
+                    .on("tap", function () {
+                        $(this).parents("#entry").remove();
+                        that.remove(graphObj);
+                    })
+            );
+        this.m.entrySection.append(entry);
         this.m.entrySection.trigger("create");
+
+    }
+
+    function loadGraphImpl(graph) {
+        var i, that = this;
+        this.m.uuid = graph.Id;
+        this.m.startTime = graph.Time.Start;
+        this.m.endTime = graph.Time.End;
+        this.m.period = graph.Time.Period;
+        this.m.title.val(graph.Name);
+        for (i = 0; i < graph.Metrics.length; i++) {
+            this.addMetric({
+                search: graph.Metrics[i]
+            });
+        }
+        setTimeout(function () {
+            that.m.entrySection.find("#update").trigger("tap");
+            that.m.entrySection.hide();
+        }, 200);
+        this.edit(false);
+    }
+
+    function editGraph(editable) {
+        var title = this.m.root.find("#title");
+        if (editable) {
+            this.m.root.find("#save").text("Save").removeClass("ui-icon-edit").addClass("ui-icon-check");
+            this.m.entrySection.show();
+            title.textinput("enable");
+            return;
+        }
+        this.m.root.find("#save").text("Edit").removeClass("ui-icon-check").addClass("ui-icon-edit");
+        this.m.entrySection.hide();
+        title.textinput("disable");
+
     }
 
     function newGraph(dataStore) {
@@ -249,7 +308,8 @@ define(["jquery"], function ($) {
             legend = $("<div />"),
             graphContainer = $("<div />"),
             windowWidth = $(window).width(),
-            windowHeight = $(window).height();
+            windowHeight = $(window).height(),
+            title = $("<input />", {value: "New Graph", type: "text"}).attr("id", "title").addClass("ui-mini");
 
         entrySection = $("<div />", {id : "entrySection"})
             .attr("data-role", "controlgroup")
@@ -269,7 +329,12 @@ define(["jquery"], function ($) {
                 $("<div/ >")
                     .addClass("ui-bar ui-bar-a")
                     .attr("data-role", "header")
-                    .append($("<h4 />", {text: "New Graph"}))
+                    .append(
+                        $("<div />").addClass("titleCover")
+                            .append(
+                                title
+                            )
+                    )
                     .append(
                         $("<button />", {text: "Add Metric"})
                             .addClass("ui-btn ui-btn-inline ui-mini ui-corner-all ui-icon-plus ui-btn-icon-left")
@@ -281,6 +346,7 @@ define(["jquery"], function ($) {
                     )
                     .append(
                         $("<button />", {text: "Save"})
+                            .attr("id", "save")
                             .addClass("ui-btn ui-btn-inline ui-mini ui-corner-all ui-icon-check ui-btn-icon-left")
                             .on("tap", function () {
                                 var metrics = [],
@@ -288,15 +354,14 @@ define(["jquery"], function ($) {
                                     saveObj,
                                     btn = $(this);
                                 if (btn.text() === "Edit") {
-                                    btn.text("Save").removeClass("ui-icon-edit").addClass("ui-icon-check");
-                                    graph.m.entrySection.show();
+                                    graph.edit(true);
                                 } else {
                                     for (i = 0; i < graph.m.dataSets.length; i++) {
                                         metrics.push(graph.m.dataSets[i].search);
                                     }
                                     saveObj = {
                                         Metrics: metrics,
-                                        Name: "New Graph",
+                                        Name: graph.m.title.val(),
                                         Time: {
                                             Start: graph.m.startTime,
                                             End: graph.m.endTime,
@@ -306,8 +371,7 @@ define(["jquery"], function ($) {
                                     };
                                     graph.m.dataStore.save(saveObj, function (uuid) {
                                         graph.m.uuid = uuid;
-                                        btn.text("Edit").removeClass("ui-icon-check").addClass("ui-icon-edit");
-                                        graph.m.entrySection.hide();
+                                        graph.edit(false);
                                     }, function () {
                                         alert("Error saving graph!");
                                     });
@@ -357,6 +421,7 @@ define(["jquery"], function ($) {
                 dataStore: dataStore,
                 freeColors: colors.slice(),
                 uuid: "",
+                title: title,
                 display: {
                     width: windowWidth * 0.7,
                     height: windowHeight * 0.8
@@ -371,15 +436,16 @@ define(["jquery"], function ($) {
             setTime : function (start, end, period) {
                 return setTimeGraph.call(graph, start, end, period);
             },
+            setId : function (id) {
+                graph.m.uuid = id;
+            },
             getRoot : function () {
                 return graph.m.root;
             },
-            addMetric: function () {
-                var graphObj = {
-                    color: graph.m.freeColors.pop(),
-                    data: {}
-                };
-                graph.m.dataSets.push(graphObj);
+            loadGraph: function (g) {
+                return loadGraphImpl.call(graph, g);
+            },
+            addMetric: function (graphObj) {
                 return addMetricGraph.call(graph, graphObj);
             },
             remove: function (graphObj) {
@@ -392,6 +458,9 @@ define(["jquery"], function ($) {
                     }
                 }
                 graph.draw();
+            },
+            edit: function (editable) {
+                return editGraph.call(graph, editable);
             }
         };
         return graph;

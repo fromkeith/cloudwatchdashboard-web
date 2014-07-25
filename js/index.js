@@ -2,8 +2,63 @@ require(["jquery", "js/graph"], function ($, grapher) {
     "use strict";
     var knownMetrics = {},
         knownNamespaces = {},
-        namespaceList = [];
+        namespaceList = [],
+        displayedMetrics = [],
+        knownGraphs = {},
+        dataStore;
     require(["jquery.mobile"]);
+
+    function alphaSort(a, b) {
+        if (a < b) {
+            return -1;
+        }
+        if (a > b) {
+            return 1;
+        }
+        return 0;
+    }
+
+    function graphaSelected(e) {
+        var btn = $(this),
+            graphId = btn.data("GraphId"),
+            g = grapher.newGraph(dataStore);
+        $("#graphs").append(g.getRoot()).trigger("create");
+        g.loadGraph(knownGraphs[graphId]);
+        displayedMetrics.push(g);
+
+        $("#menutoggle").trigger("click");
+    }
+
+    function populateGraphSearch(data) {
+        var graphlist = $("#savedGraphs #graphlist"),
+            i;
+        data.Graphs.sort(function (a, b) {
+            return alphaSort(a.Name, b.Name);
+        });
+        for (i = 0; i < data.Graphs.length; i++) {
+            knownGraphs[data.Graphs[i].Id] = data.Graphs[i];
+            graphlist.append(
+                $("<button />", {text: data.Graphs[i].Name})
+                    .addClass("ui-btn ui-mini")
+                    .on("tap", graphaSelected)
+                    .data("GraphId", data.Graphs[i].Id)
+            );
+        }
+        graphlist.trigger("updatelayout");
+    }
+
+    function getSavedGraphs() {
+        $.ajax({
+            url: "/r/graphs",
+            error : function (request, textStatus, errorThrown) {
+                console.log("Failed to load saved graphs");
+                return;
+            },
+            success : function (data, textStatus, request) {
+                populateGraphSearch(data);
+            }
+        });
+    }
 
 
     function getMetrics(search, start, end, callback) {
@@ -39,7 +94,7 @@ require(["jquery", "js/graph"], function ($, grapher) {
         });
     }
 
-    function metricClicked(e) {
+    /*function metricClicked(e) {
         $("#menutoggle").trigger("click");
         return;
     }
@@ -63,32 +118,15 @@ require(["jquery", "js/graph"], function ($, grapher) {
         metricRoot.trigger("updatelayout");
         $("#metricList #metricsTab").slideDown(400);
         return;
-    }
+    }*/
 
-    function alphaSort(a, b) {
-        if (a < b) {
-            return -1;
-        }
-        if (a > b) {
-            return 1;
-        }
-        return 0;
-    }
 
-    function fillInMenuItems() {
-        var root = $("#metricList #namespaces"),
-            i;
+    function finalizeMetricList() {
+        var i;
         namespaceList.sort(alphaSort);
         for (i = 0; i < namespaceList.length; i++) {
-            root.append(
-                $("<button />", {text: namespaceList[i]})
-                    .addClass("ui-btn")
-                    .addClass("ui-mini")
-                    .on("tap", namespaceClicked)
-            );
             knownNamespaces[namespaceList[i]].sort(alphaSort);
         }
-        root.trigger("updatelayout");
     }
 
     function loadMetrics(token) {
@@ -123,7 +161,7 @@ require(["jquery", "js/graph"], function ($, grapher) {
                 if (data.NextToken !== undefined && data.NextToken !== "") {
                     loadMetrics(data.NextToken);
                 } else {
-                    fillInMenuItems();
+                    finalizeMetricList();
                 }
             }
         });
@@ -173,21 +211,24 @@ require(["jquery", "js/graph"], function ($, grapher) {
                 return;
             },
             success : function (data, textStatus, request) {
+                knownGraphs[data.Id] = saveObj;
                 callback(data.Id);
             }
         });
     }
 
+    dataStore = {
+        findMetrics: findMetrics,
+        findDimension: findDimension,
+        getMetrics: getMetrics,
+        save: saveGraph
+    };
+
     $(function () {
         loadMetrics("");
+        getSavedGraphs();
     });
     $(document).on("pagecreate", "#home", function () {
-        var dataStore = {
-            findMetrics: findMetrics,
-            findDimension: findDimension,
-            getMetrics: getMetrics,
-            save: saveGraph
-        };
         $("#metricList #backToNamespaces").on("tap", function () {
             $("#metricList #metricsTab").slideUp(400);
             $("#metricList #namespacesTab").slideDown(400);
@@ -198,9 +239,8 @@ require(["jquery", "js/graph"], function ($, grapher) {
                 end = Date.now();
             g.setTime(start, end, 60);
             $("#graphs").append(g.getRoot()).trigger("create");
+            displayedMetrics.push(g);
         });
-    }).on("pagebeforeshow", "#menu", function (e) {
-        $("#metricList").hide();
     });
     return;
 });
