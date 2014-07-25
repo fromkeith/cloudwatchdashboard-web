@@ -1,0 +1,57 @@
+doctype html
+html
+    head
+        meta(name="viewport", content="width=device-width, initial-scale=1")
+        link(href="/css/index.css", rel="stylesheet")
+        script(src="//cdnjs.cloudflare.com/ajax/libs/Chart.js/0.2.0/Chart.min.js")
+        script(src="/js/require.js", data-main="/js/index")
+    body
+        div#home(data-role="page")
+            div(data-role="header")
+                a#menutoggle(href="#menu", data-icon="bars", data-iconpos="notext")
+                    | Menu
+                h4 Welcome
+            div(data-role="content")
+                button#addGraph.ui-btn.ui-btn-inline
+                    | Add Graph
+                div#graphs
+                    //-div.ui-corner-all.custom-corners
+                        .ui-bar.ui-bar-a(data-role="header")
+                            h3
+                                | Name
+                            button.ui-btn.ui-btn-inline.ui-mini.ui-corner-all.ui-icon-plus.ui-btn-icon-left
+                                | Add Metric
+                            button.ui-btn.ui-btn-inline.ui-mini.ui-corner-all.ui-icon-check.ui-btn-icon-left
+                                | Save
+                        .ui-body.ui-body-a
+                            div(style="background:#3d0;width:100%;height:600px")
+                            div(data-role="controlgroup", data-mini="true")
+                                div(data-role="controlgroup", data-mini="true", data-type="horizontal")
+                                    label
+                                        input(type="checkbox", checked="checked")
+                                        div(style="width:10px;height:10px;background:#3d0;display:inline-block;")
+                                        | Metric 1
+                                    button.ui-btn.ui-btn-inline
+                                        | Delete
+                                div(data-role="controlgroup", data-mini="true", data-type="horizontal")
+                                    label
+                                        input(type="checkbox", checked="checked")
+                                        div(style="width:10px;height:10px;background:#3d0;display:inline-block;")
+                                        | Metric 1
+                                    button.ui-btn.ui-btn-inline
+                                        | Delete
+            div#menu(data-role="panel", data-display="overlay")
+                .ui-bar.ui-bar-a.ui-corner-all
+                    | Metrics
+                div(data-role="tabs")
+                    #namespacesTab
+                        input(data-type="search", id="namespacesFilter")
+                        div#namespaces(data-role="controlgroup", data-filter="true", data-input="#namespacesFilter")
+                    #metricsTab(style="display:none")
+                        button#backToNamespaces.ui-btn.ui-mini Back
+                        input(data-type="search", id="metricsFilter")
+                        div#metrics(data-role="controlgroup", data-filter="true", data-input="#metricsFilter")
+
+                .ui-bar.ui-bar-a.ui-corner-all
+                    | Logs
+                div#logs(data-role="controlgroup")

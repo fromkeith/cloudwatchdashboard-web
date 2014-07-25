@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="/css/index.css" rel="stylesheet">
+    <script src="//cdnjs.cloudflare.com/ajax/libs/Chart.js/0.2.0/Chart.min.js"></script>
+    <script src="/js/require.js" data-main="/js/index"></script>
+  </head>
+  <body>
+    <div id="home" data-role="page">
+      <div data-role="header"><a id="menutoggle" href="#menu" data-icon="bars" data-iconpos="notext">Menu</a>
+        <h4>Welcome</h4>
+      </div>
+      <div data-role="content">
+        <button id="addGraph" class="ui-btn ui-btn-inline">Add Graph</button>
+        <div id="graphs">
+        </div>
+      </div>
+      <div id="menu" data-role="panel" data-display="overlay">
+        <div class="ui-bar ui-bar-a ui-corner-all">Metrics</div>
+        <div data-role="tabs">
+          <div id="namespacesTab">
+            <input data-type="search" id="namespacesFilter">
+            <div id="namespaces" data-role="controlgroup" data-filter="true" data-input="#namespacesFilter"></div>
+          </div>
+          <div id="metricsTab" style="display:none">
+            <button id="backToNamespaces" class="ui-btn ui-mini">Back</button>
+            <input data-type="search" id="metricsFilter">
+            <div id="metrics" data-role="controlgroup" data-filter="true" data-input="#metricsFilter"></div>
+          </div>
+        </div>
+        <div class="ui-bar ui-bar-a ui-corner-all">Logs</div>
+        <div id="logs" data-role="controlgroup"></div>
+      </div>
+    </div>
+  </body>
+</html>
