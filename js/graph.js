@@ -20,21 +20,25 @@ define(["jquery"], function ($) {
 
     function drawGraph() {
         var i,
-            j;
+            j,
+            s;
         for (j = this.m.chart.data.length; j < this.m.dataSets.length; j++) {
             this.m.chart.data.push([]);
-            this.m.chart.series.push({});
         }
         if (this.m.dataSets.length < this.m.chart.data.length) {
             this.m.chart.data.splice(this.m.dataSets.length);
             this.m.chart.series.splice(this.m.dataSets.length);
         }
+        s = 0;
         for (j = 0; j < this.m.dataSets.length; j++) {
             if (this.m.dataSets[j].data === undefined) {
                 continue;
             }
             if (this.m.dataSets[j].data.Datapoints === undefined) {
                 continue;
+            }
+            if (s >= this.m.chart.series.length) {
+                this.m.chart.series.push({});
             }
             this.m.chart.data[j].splice(0);
             for (i = 0; i < this.m.dataSets[j].data.Datapoints.length; i++) {
@@ -44,9 +48,13 @@ define(["jquery"], function ($) {
                 });
             }
 
-            this.m.chart.series[j].color = this.m.dataSets[j].color;
-            this.m.chart.series[j].name = this.m.dataSets[j].search.Metric + " " + this.m.dataSets[j].search.Dimension;
-            this.m.chart.series[j].data = this.m.chart.data[j];
+            this.m.chart.series[s].color = this.m.dataSets[j].color;
+            this.m.chart.series[s].name = this.m.dataSets[j].search.Metric + " " + this.m.dataSets[j].search.Dimension;
+            this.m.chart.series[s].data = this.m.chart.data[j];
+            s++;
+        }
+        if (s < this.m.chart.series) {
+            this.m.chart.series.splice(s);
         }
         this.m.chart.graphContainer.show();
         if (this.m.chart.graph === undefined) {
