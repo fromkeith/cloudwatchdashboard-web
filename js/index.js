@@ -1,4 +1,4 @@
-require(["jquery", "js/graph"], function ($, grapher) {
+require(["jquery", "js/graph", "js/logs", "js/utils"], function ($, grapher, logs, utils) {
     "use strict";
     var knownMetrics = {},
         knownNamespaces = {},
@@ -7,16 +7,6 @@ require(["jquery", "js/graph"], function ($, grapher) {
         knownGraphs = {},
         dataStore;
     require(["jquery.mobile"]);
-
-    function alphaSort(a, b) {
-        if (a < b) {
-            return -1;
-        }
-        if (a > b) {
-            return 1;
-        }
-        return 0;
-    }
 
     function graphaSelected(e) {
         var btn = $(this),
@@ -33,7 +23,7 @@ require(["jquery", "js/graph"], function ($, grapher) {
         var graphlist = $("#savedGraphs #graphlist"),
             i;
         data.Graphs.sort(function (a, b) {
-            return alphaSort(a.Name, b.Name);
+            return utils.alphaSort(a.Name, b.Name);
         });
         for (i = 0; i < data.Graphs.length; i++) {
             knownGraphs[data.Graphs[i].Id] = data.Graphs[i];
@@ -123,9 +113,9 @@ require(["jquery", "js/graph"], function ($, grapher) {
 
     function finalizeMetricList() {
         var i;
-        namespaceList.sort(alphaSort);
+        namespaceList.sort(utils.alphaSort);
         for (i = 0; i < namespaceList.length; i++) {
-            knownNamespaces[namespaceList[i]].sort(alphaSort);
+            knownNamespaces[namespaceList[i]].sort(utils.alphaSort);
         }
     }
 
@@ -176,7 +166,7 @@ require(["jquery", "js/graph"], function ($, grapher) {
                 result.push(keys[i]);
             }
         }
-        result.sort(alphaSort);
+        result.sort(utils.alphaSort);
         return result;
     }
 
@@ -197,7 +187,7 @@ require(["jquery", "js/graph"], function ($, grapher) {
                 }
             }
         }
-        result.sort(alphaSort);
+        result.sort(utils.alphaSort);
         return result;
     }
 
@@ -224,11 +214,9 @@ require(["jquery", "js/graph"], function ($, grapher) {
         save: saveGraph
     };
 
-    $(function () {
+    $(document).on("pagecreate", "#metrics", function () {
         loadMetrics("");
         getSavedGraphs();
-    });
-    $(document).on("pagecreate", "#home", function () {
         $("#metricList #backToNamespaces").on("tap", function () {
             $("#metricList #metricsTab").slideUp(400);
             $("#metricList #namespacesTab").slideDown(400);
@@ -241,6 +229,8 @@ require(["jquery", "js/graph"], function ($, grapher) {
             $("#graphs").append(g.getRoot()).trigger("create");
             displayedMetrics.push(g);
         });
+    }).on("pagecreate", "#logs", function () {
+        logs.populateLogGroups($("#logGroups"), $("#logStreams"), $("#logcontent"));
     });
     return;
 });

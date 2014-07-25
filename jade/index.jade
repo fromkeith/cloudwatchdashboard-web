@@ -10,9 +10,15 @@ html
     body
         div#home(data-role="page")
             div(data-role="header")
+                h4 Welcome!
+            div(data-role="content")
+                a.ui-btn(href="#metrics") Metrics
+                a.ui-btn(href="#logs") Logs
+        div#metrics(data-role="page")
+            div(data-role="header")
                 a#menutoggle(href="#menu", data-icon="bars", data-iconpos="notext")
                     | Menu
-                h4 Welcome
+                h4 Metrics!
             div(data-role="content")
                 button#addGraph.ui-btn.ui-btn-inline
                     | Add Graph
@@ -31,3 +37,21 @@ html
                         button#backToNamespaces.ui-btn.ui-mini Back
                         input(data-type="search", id="metricsFilter")
                         div#metrics(data-role="controlgroup", data-filter="true", data-input="#metricsFilter")
+        div#logs(data-role="page")
+            iv(data-role="header")
+                h4 Logs!
+            div(data-role="content")
+                h4 Log Groups
+                div#logGroups(data-role="controlgroup", data-type="horizontal")
+                h5 Log Streams
+                fieldset#logStreams(data-role="controlgroup", data-type="horizontal")
+                form.ui-filterable
+                    input#searchLog(data-type="search")
+                table#logcontent.ui-responsive(data-role="table", data-filter="true", data-input="#searchLog")
+                    thead
+                        tr
+                            th Stream
+                            th Time
+                            th Log
+                    tbody
+
