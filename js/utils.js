@@ -9,7 +9,18 @@ define([], function () {
         }
         return 0;
     }
+    function getUrlParam(name) {
+        var results = new RegExp('[\\?&]' + name + '=([^&#]*)').exec(window.location.href);
+        if (results === null || results.length === 0) {
+            return null;
+        }
+        if (results[1]) {
+            return decodeURIComponent(results[1]);
+        }
+        return null;
+    }
     return {
-        alphaSort: alphaSort
+        alphaSort: alphaSort,
+        getUrlParam: getUrlParam
     };
 });

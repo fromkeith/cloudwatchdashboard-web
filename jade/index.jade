@@ -14,6 +14,7 @@ html
             div(data-role="content")
                 a.ui-btn(href="#metrics") Metrics
                 a.ui-btn(href="#logs") Logs
+                a.ui-btn(href="#dashboards") Dashboards
         div#metrics(data-role="page")
             div(data-role="header")
                 a#menutoggle(href="#menu", data-icon="bars", data-iconpos="notext")
@@ -54,4 +55,22 @@ html
                             th Time
                             th Log
                     tbody
+        div#dashboards(data-role="page")
+            div(data-role="header")
+                h4 Dashboards
+            div(data-role="content")
+                input#newDashboardName(type="text", placeholder-text="New Dashboard Name")
+                button#newDashboard.ui-btn.ui-btn-inline New Dashboard
+                input#dashboardFilter(data-type="search")
+                #dashboardList(data-role="controlgroup", data-filter="true", data-input="#dashboardFilter")
+        div#dashboard(data-role="page")
+            div(data-role="header")
+                h4 Dashboard
+            div(data-role="content")
+                button#addGraph.ui-btn.ui-btn-inline
+                    | Add Graph
+                button#saveDashboard.ui-btn.ui-btn-inline
+                    | Save
+                input#dashboardName(type="text")
+                div#graphs
 

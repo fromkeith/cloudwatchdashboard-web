@@ -37,6 +37,9 @@ define(["jquery"], function ($) {
             if (this.m.dataSets[j].data.Datapoints === undefined) {
                 continue;
             }
+            if (this.m.dataSets[j].data.Datapoints.length === 0) {
+                continue;
+            }
             if (s >= this.m.chart.series.length) {
                 this.m.chart.series.push({});
             }
@@ -55,6 +58,9 @@ define(["jquery"], function ($) {
         }
         if (s < this.m.chart.series) {
             this.m.chart.series.splice(s);
+        }
+        if (s === 0) {
+            return;
         }
         this.m.chart.graphContainer.show();
         if (this.m.chart.graph === undefined) {
@@ -353,6 +359,14 @@ define(["jquery"], function ($) {
                             })
                     )
                     .append(
+                        $("<button />", {text: "Remove"})
+                            .attr("id", "remove")
+                            .addClass("ui-btn ui-btn-inline ui-mini ui-corner-all ui-icon-delete ui-btn-icon-left")
+                            .on("tap", function () {
+                                graph.deleteMe();
+                            })
+                    )
+                    .append(
                         $("<button />", {text: "Save"})
                             .attr("id", "save")
                             .addClass("ui-btn ui-btn-inline ui-mini ui-corner-all ui-icon-check ui-btn-icon-left")
@@ -433,7 +447,8 @@ define(["jquery"], function ($) {
                 display: {
                     width: windowWidth * 0.7,
                     height: windowHeight * 0.8
-                }
+                },
+                deleteListener: null
             },
             draw : function () {
                 return drawGraph.call(graph);
@@ -446,6 +461,9 @@ define(["jquery"], function ($) {
             },
             setId : function (id) {
                 graph.m.uuid = id;
+            },
+            getId : function (id) {
+                return graph.m.uuid;
             },
             getRoot : function () {
                 return graph.m.root;
@@ -469,6 +487,16 @@ define(["jquery"], function ($) {
             },
             edit: function (editable) {
                 return editGraph.call(graph, editable);
+            },
+            setDeleteListener: function (d) {
+                graph.m.deleteListener = d;
+            },
+            deleteMe: function () {
+                graph.m.root.remove();
+                if (graph.m.deleteListener !== null) {
+                    graph.m.deleteListener(graph.m.uuid);
+                }
+                graph.m = null;
             }
         };
         return graph;

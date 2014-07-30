@@ -1,14 +1,9 @@
-require(["jquery", "js/graph", "js/logs", "js/utils"], function ($, grapher, logs, utils) {
+require(["jquery", "js/graph", "js/logs", "js/utils", "js/dashboardListPage", "js/graphDataStore", "js/dashboardPage"], function ($, grapher, logs, utils, dataStore) {
     "use strict";
-    var knownMetrics = {},
-        knownNamespaces = {},
-        namespaceList = [],
-        displayedMetrics = [],
-        knownGraphs = {},
-        dataStore;
+
     require(["jquery.mobile"]);
 
-    function graphaSelected(e) {
+    /*function graphaSelected(e) {
         var btn = $(this),
             graphId = btn.data("GraphId"),
             g = grapher.newGraph(dataStore);
@@ -17,9 +12,9 @@ require(["jquery", "js/graph", "js/logs", "js/utils"], function ($, grapher, log
         displayedMetrics.push(g);
 
         $("#menutoggle").trigger("click");
-    }
+    }*/
 
-    function populateGraphSearch(data) {
+    /*function populateGraphSearch(data) {
         var graphlist = $("#savedGraphs #graphlist"),
             i;
         data.Graphs.sort(function (a, b) {
@@ -48,41 +43,8 @@ require(["jquery", "js/graph", "js/logs", "js/utils"], function ($, grapher, log
                 populateGraphSearch(data);
             }
         });
-    }
+    }*/
 
-
-    function getMetrics(search, start, end, callback) {
-        var metric = knownMetrics[search.Metric],
-            query = {
-                Namespace   : metric.Namespace,
-                MetricName  : metric.MetricName,
-                StartTime   : start,
-                EndTime     : end,
-                Statistic   : search.Statistic
-            };
-        if (search.Dimension !== "" && search.Dimension.indexOf(":") !== -1) {
-            query.Dimensions = [
-                {
-                    Name: search.Dimension.substr(0, search.Dimension.indexOf(":")).trim(),
-                    value: search.Dimension.substr(search.Dimension.indexOf(":") + 1).trim()
-                }
-            ];
-        }
-        $.ajax({
-            url: "/r/metric?search=" + encodeURIComponent(JSON.stringify(query)),
-            headers: {
-                "Region" : "us-west-2"
-            },
-            error : function (request, textStatus, errorThrown) {
-                callback({});
-                return;
-            },
-            success : function (data, textStatus, request) {
-                callback(data);
-                return;
-            }
-        });
-    }
 
     /*function metricClicked(e) {
         $("#menutoggle").trigger("click");
@@ -110,124 +72,17 @@ require(["jquery", "js/graph", "js/logs", "js/utils"], function ($, grapher, log
         return;
     }*/
 
-
-    function finalizeMetricList() {
-        var i;
-        namespaceList.sort(utils.alphaSort);
-        for (i = 0; i < namespaceList.length; i++) {
-            knownNamespaces[namespaceList[i]].sort(utils.alphaSort);
-        }
-    }
-
-    function loadMetrics(token) {
-        $.ajax({
-            url: "/r/metric/list/?token=" + encodeURIComponent(token),
-            type: "GET",
-            headers: {
-                "Region" : "us-west-2"
-            },
-            error : function (request, textStatus, errorThrown) {
-                return;
-            },
-            success : function (data, textStatus, request) {
-                var i, name;
-                for (i = 0; i < data.Metrics.length; i++) {
-                    name = data.Metrics[i].Namespace + "/" + data.Metrics[i].MetricName;
-                    if (knownMetrics[name] === undefined) {
-                        knownMetrics[name] = data.Metrics[i];
-                    } else if (data.Metrics[i].Dimensions !== null) {
-                        if (knownMetrics[name].Dimensions !== null) {
-                            $.merge(knownMetrics[name].Dimensions, data.Metrics[i].Dimensions);
-                        } else {
-                            knownMetrics[name].Dimensions = data.Metrics[i].Dimensions;
-                        }
-                    }
-                    if (knownNamespaces[data.Metrics[i].Namespace] === undefined) {
-                        knownNamespaces[data.Metrics[i].Namespace] = [];
-                        namespaceList.push(data.Metrics[i].Namespace);
-                    }
-                    knownNamespaces[data.Metrics[i].Namespace].push(data.Metrics[i].MetricName);
-                }
-                if (data.NextToken !== undefined && data.NextToken !== "") {
-                    loadMetrics(data.NextToken);
-                } else {
-                    finalizeMetricList();
-                }
-            }
-        });
-    }
-
-    function findMetrics(search) {
-        var i, keys = Object.keys(knownMetrics), result = [];
-        search = search.toLowerCase();
-        // this won't scale at laterge sets... but for now.. i'm lazy
-        for (i = 0; i < keys.length; i++) {
-            if (keys[i].toLowerCase().indexOf(search) !== -1) {
-                result.push(keys[i]);
-            }
-        }
-        result.sort(utils.alphaSort);
-        return result;
-    }
-
-    function findDimension(metric, search) {
-        var i, result = [], entry;
-        search = search.toLowerCase();
-        // this won't scale at laterge sets... but for now.. i'm lazy
-        if (search === "") {
-            for (i = 0; i < knownMetrics[metric].Dimensions.length; i++) {
-                entry = knownMetrics[metric].Dimensions[i].Name + " : " + knownMetrics[metric].Dimensions[i].Value;
-                result.push(entry);
-            }
-        } else {
-            for (i = 0; i < knownMetrics[metric].Dimensions.length; i++) {
-                entry = knownMetrics[metric].Dimensions[i].Name + " : " + knownMetrics[metric].Dimensions[i].Value;
-                if (entry.toLowerCase().indexOf(search) !== -1) {
-                    result.push(entry);
-                }
-            }
-        }
-        result.sort(utils.alphaSort);
-        return result;
-    }
-
-    function saveGraph(saveObj, callback) {
-        $.ajax({
-            url: "/r/graph/?id=" + saveObj.Id,
-            data: JSON.stringify(saveObj),
-            type: "POST",
-            error : function (request, textStatus, errorThrown) {
-                console.log("Nope!");
-                return;
-            },
-            success : function (data, textStatus, request) {
-                knownGraphs[data.Id] = saveObj;
-                callback(data.Id);
-            }
-        });
-    }
-
-    dataStore = {
-        findMetrics: findMetrics,
-        findDimension: findDimension,
-        getMetrics: getMetrics,
-        save: saveGraph
-    };
-
     $(document).on("pagecreate", "#metrics", function () {
-        loadMetrics("");
-        getSavedGraphs();
         $("#metricList #backToNamespaces").on("tap", function () {
             $("#metricList #metricsTab").slideUp(400);
             $("#metricList #namespacesTab").slideDown(400);
         });
-        $("#addGraph").on("tap", function () {
+        $("#metrics #addGraph").on("tap", function () {
             var g = grapher.newGraph(dataStore),
                 start = Date.now() - 1000 * 60 * 60,
                 end = Date.now();
             g.setTime(start, end, 60);
-            $("#graphs").append(g.getRoot()).trigger("create");
-            displayedMetrics.push(g);
+            $("#metrics #graphs").append(g.getRoot()).trigger("create");
         });
     }).on("pagecreate", "#logs", function () {
         logs.populateLogGroups($("#logGroups"), $("#logStreams"), $("#logcontent"));
