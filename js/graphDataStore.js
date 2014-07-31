@@ -6,7 +6,9 @@ define(["jquery", "js/utils"], function ($, utils) {
         namespaceList = [],
         knownGraphs = {},
         waitForGraphsToLoad = [],
-        graphsLoaded = false;
+        waitForMetricsToLoad = [],
+        graphsLoaded = false,
+        metricsLoaded = false;
 
     function populateGraphSearch(data) {
         var i;
@@ -29,6 +31,11 @@ define(["jquery", "js/utils"], function ($, utils) {
         for (i = 0; i < namespaceList.length; i++) {
             knownNamespaces[namespaceList[i]].sort(utils.alphaSort);
         }
+        metricsLoaded = true;
+        for (i = 0; i < waitForMetricsToLoad.length; i++) {
+            waitForMetricsToLoad[i]();
+        }
+        waitForMetricsToLoad = [];
     }
 
     function loadMetrics(token) {
@@ -132,7 +139,7 @@ define(["jquery", "js/utils"], function ($, utils) {
         });
     }
 
-    function getMetrics(search, start, end, callback) {
+    function getMetricsQuery(search, start, end, callback) {
         var metric = knownMetrics[search.Metric],
             query = {
                 Namespace   : metric.Namespace,
@@ -163,6 +170,16 @@ define(["jquery", "js/utils"], function ($, utils) {
                 return;
             }
         });
+    }
+
+    function getMetrics(search, start, end, callback) {
+        if (!metricsLoaded) {
+            waitForMetricsToLoad.push(function () {
+                getMetricsQuery(search, start, end, callback);
+            });
+            return;
+        }
+        getMetricsQuery(search, start, end, callback);
     }
     function getGraph(graphId, callback) {
         if (!graphsLoaded) {

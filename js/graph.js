@@ -14,9 +14,31 @@ define(["jquery"], function ($) {
         "#F56D68"
     ];
 
-    //function formatDate(d) {
-    //    return d.toLocaleTimeString("US", {localMatcher: "best fit"});
-    //}
+    function relativeStringToTime(t) {
+        var i, units = t.match(/([0-9]+[ywdhm])/g), result = 0, val, dur;
+        for (i = 0; i < units.length; i++) {
+            val = units[i].match(/[0-9]+/)[0];
+            dur = units[i].match(/[ywdhms]/)[0];
+            switch (dur) {
+            case "y":
+                result += val * 1000 * 60 * 60 * 24 * 7 * 52;
+                break;
+            case "w":
+                result += val * 1000 * 60 * 60 * 24 * 7;
+                break;
+            case "d":
+                result += val * 1000 * 60 * 60 * 24;
+                break;
+            case "h":
+                result += val * 1000 * 60 * 60;
+                break;
+            case "m":
+                result += val * 1000 * 60;
+                break;
+            }
+        }
+        return result;
+    }
 
     function drawGraph() {
         var i,
@@ -125,10 +147,37 @@ define(["jquery"], function ($) {
         graphObj.data = data;
     }
 
-    function setTimeGraph(start, end, period) {
+    function prefixIt(v) {
+        if (v < 10) {
+            return "0" + v;
+        }
+        return v;
+    }
+
+    function datetimeFormat(a) {
+        return a.getFullYear() + "-" + prefixIt(a.getMonth()) + "-" + prefixIt(a.getDate()) + "T" + prefixIt(a.getHours()) + ":" + prefixIt(a.getMinutes()) + ":" + prefixIt(a.getSeconds());
+    }
+
+    function setTimeGraph(start, end, period, relative) {
+        var relTime;
         this.m.startTime = start;
         this.m.endTime = end;
         this.m.period = period;
+        this.m.relativeTime = relative;
+        if (relative !== "" && relative !== undefined && relative !== null) {
+            relTime = relativeStringToTime(relative);
+            this.m.startTime = new Date(Date.now() - relTime).getTime();
+            this.m.endTime = new Date().getTime();
+            this.m.root.find(".datearea .relative").show();
+            this.m.root.find(".datearea .absolute").hide();
+        } else {
+            relative = "";
+            this.m.root.find(".datearea .relative").hide();
+            this.m.root.find(".datearea .absolute").show();
+        }
+        this.m.root.find("#startDate").val(datetimeFormat(new Date(this.m.startTime))).trigger("create");
+        this.m.root.find("#endDate").val(datetimeFormat(new Date(this.m.endTime))).trigger("updatelayout");
+        this.m.root.find(".datearea .relative #relative").val(relative);
     }
 
     function addMetricGraph(graphObj) {
@@ -279,20 +328,19 @@ define(["jquery"], function ($) {
 
     }
 
+
     function loadGraphImpl(graph) {
         var i, that = this;
         this.m.uuid = graph.Id;
-        this.m.startTime = graph.Time.Start;
-        this.m.endTime = graph.Time.End;
-        this.m.period = graph.Time.Period;
         this.m.title.val(graph.Name);
+        this.setTime(graph.Time.Start, graph.Time.End, graph.Time.Period, graph.Time.Relative);
         for (i = 0; i < graph.Metrics.length; i++) {
             this.addMetric({
                 search: graph.Metrics[i]
             });
         }
         setTimeout(function () {
-            that.m.entrySection.find("#update").trigger("tap");
+            that.update();
             that.m.entrySection.hide();
         }, 200);
         this.edit(false);
@@ -310,6 +358,52 @@ define(["jquery"], function ($) {
         this.m.entrySection.hide();
         title.textinput("disable");
 
+    }
+
+
+    function getMetricsCallbackSetter(i, dataSets, start, end, that, updateGrouper) {
+        that.m.dataStore.getMetrics(dataSets[i].search, start, end, function (data) {
+            that.setData(dataSets[i], data);
+            updateGrouper.updated();
+        });
+    }
+
+    function updateGraph() {
+        var i,
+            absTimeDiv = this.m.root.find(".datearea .absolute"),
+            dateRaw,
+            relTime,
+            updateGrouper = {
+                counter: 0
+            },
+            that = this,
+            relString;
+        if (absTimeDiv.is(":visible")) {
+            dateRaw = new Date(this.m.root.find(".datearea .absolute #startDate").val());
+            this.m.startTime = new Date(dateRaw.getTime() + dateRaw.getTimezoneOffset() * 60 * 1000).getTime();
+            dateRaw = new Date(this.m.root.find(".datearea .absolute #endDate").val());
+            this.m.endTime = new Date(dateRaw.getTime() + dateRaw.getTimezoneOffset() * 60 * 1000).getTime();
+            this.m.relativeTime = "";
+        } else {
+            relString = this.m.root.find(".datearea .relative #relative").val();
+            if (relString === "") {
+                relString = "2h";
+            }
+            relTime = relativeStringToTime(relString);
+            this.m.startTime = new Date(Date.now() - relTime).getTime();
+            this.m.endTime = new Date().getTime();
+            this.m.relativeTime = relString;
+        }
+        updateGrouper.counter = this.m.dataSets.length;
+        updateGrouper.updated = function () {
+            updateGrouper.counter--;
+            if (updateGrouper.counter <= 0) {
+                that.draw();
+            }
+        };
+        for (i = 0; i < this.m.dataSets.length; i++) {
+            getMetricsCallbackSetter(i, this.m.dataSets, this.m.startTime, this.m.endTime, this, updateGrouper);
+        }
     }
 
     function newGraph(dataStore) {
@@ -338,7 +432,7 @@ define(["jquery"], function ($) {
             height: windowHeight * 0.8
         });
 
-        root.addClass("ui-corner-all custom-corners")
+        root.addClass("ui-corner-all custom-corners agraph")
             .append(
                 $("<div/ >")
                     .addClass("ui-bar ui-bar-a")
@@ -387,7 +481,8 @@ define(["jquery"], function ($) {
                                         Time: {
                                             Start: graph.m.startTime,
                                             End: graph.m.endTime,
-                                            Period: graph.m.period
+                                            Period: graph.m.period,
+                                            Relative: graph.m.relativeTime
                                         },
                                         Id: graph.m.uuid
                                     };
@@ -402,6 +497,52 @@ define(["jquery"], function ($) {
                     )
                     .append(
                         legend
+                    )
+                    .append(
+                        $("<div />")
+                            .addClass("datearea")
+                            .append(
+                                $("<button />", {text: "Date Range Switch"})
+                                    .addClass("ui-btn")
+                                    .on("tap", function () {
+                                        $(this).parent().find(".absolute").toggle();
+                                        $(this).parent().find(".relative").toggle();
+                                    })
+                            )
+                            .append(
+                                $("<button />", {text: "Update"})
+                                    .addClass("ui-btn")
+                                    .on("tap", function () {
+                                        graph.update();
+                                    })
+                            )
+                            .append(
+                                $("<div />")
+                                    .addClass("absolute")
+                                    .append(
+                                        $("<div>", {text: "Absolute Time Range"})
+                                    )
+                                    .append(
+                                        $("<div />")
+                                            .append("<input type='datetime-local' id='startDate'>")
+                                    )
+                                    .append(
+                                        $("<div />")
+                                            .append("<input type='datetime-local' id='endDate'>")
+                                    )
+                            )
+                            .append(
+                                $("<div />")
+                                    .addClass("relative")
+                                    .append(
+                                        $("<div>", {text: "Relative Time Range"})
+                                    )
+                                    .append(
+                                        $("<div />")
+                                            .append("<input type='text' placeholder='2h' id='relative'>")
+                                    )
+                                    .hide()
+                            )
                     )
             )
             .append(
@@ -448,7 +589,8 @@ define(["jquery"], function ($) {
                     width: windowWidth * 0.7,
                     height: windowHeight * 0.8
                 },
-                deleteListener: null
+                deleteListener: null,
+                relativeTime: ""
             },
             draw : function () {
                 return drawGraph.call(graph);
@@ -456,8 +598,8 @@ define(["jquery"], function ($) {
             setData : function (index, data) {
                 return setDataGraph.call(graph, index, data);
             },
-            setTime : function (start, end, period) {
-                return setTimeGraph.call(graph, start, end, period);
+            setTime : function (start, end, period, relative) {
+                return setTimeGraph.call(graph, start, end, period, relative);
             },
             setId : function (id) {
                 graph.m.uuid = id;
@@ -497,6 +639,9 @@ define(["jquery"], function ($) {
                     graph.m.deleteListener(graph.m.uuid);
                 }
                 graph.m = null;
+            },
+            update: function () {
+                return updateGraph.call(graph);
             }
         };
         return graph;
