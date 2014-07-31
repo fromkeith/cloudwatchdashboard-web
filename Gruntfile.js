@@ -95,5 +95,6 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-jslint');
 
     grunt.registerTask('default', ["copy", "jslint", "requirejs", "jade", "less", 'watch']);
+    grunt.registerTask('build', ["copy", "jslint", "requirejs", "jade", "less"]);
 
 }
