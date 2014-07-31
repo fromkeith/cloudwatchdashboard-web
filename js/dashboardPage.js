@@ -1,4 +1,4 @@
-define(["jquery", "js/utils", "js/graph", "js/graphDataStore"], function ($, utils, grapher, dataStore) {
+define(["jquery", "js/utils", "js/graph", "js/graphDataStore", "js/login"], function ($, utils, grapher, dataStore, login) {
     "use strict";
 
     var graphs = [], originalGraphs = [], dashboardId = "";
@@ -42,7 +42,7 @@ define(["jquery", "js/utils", "js/graph", "js/graphDataStore"], function ($, uti
     function loadDashboard() {
         dashboardId = utils.getUrlParam("id");
         $.ajax({
-            url: "/r/dashboard/" + dashboardId,
+            url: "/r/dashboard/" + dashboardId + "?" + login.getUrlParam(),
             error : function (request, textStatus, errorThrown) {
                 console.log("Nope!");
                 return;
@@ -76,7 +76,7 @@ define(["jquery", "js/utils", "js/graph", "js/graphDataStore"], function ($, uti
             newSet.push(c);
         }
         $.ajax({
-            url: "/r/dashboard/" + dashboardId,
+            url: "/r/dashboard/" + dashboardId + "?" + login.getUrlParam(),
             type: "POST",
             data: JSON.stringify({
                 Name: $("#dashboard #dashboardName").val(),
@@ -100,7 +100,7 @@ define(["jquery", "js/utils", "js/graph", "js/graphDataStore"], function ($, uti
         dashboardId = "";
         graphs = [];
         originalGraphs = [];
-        loadDashboard();
+        login.onLogin(loadDashboard);
     }).on("pagecreate", "#dashboard", function () {
         $("#dashboard #addGraph").on("tap", function () {
             var g = grapher.newGraph(dataStore),

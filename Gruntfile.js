@@ -27,10 +27,12 @@ module.exports = function(grunt) {
                     fileExclusionRegExp : /(\.git)|(node_modules)|(jade)|(less)|(Gruntfile.js)|(package.json)|(font)|(img)|(html)/,
                     paths : {
                         "jquery" : "js/3rdparty/jquery-1.10.2.min",
-                        'jquery.mobile' : "js/3rdparty/jquery.mobile-1.4.3.min"
+                        'jquery.mobile' : "js/3rdparty/jquery.mobile-1.4.3.min",
+                        'jquery.cookie' : "js/3rdparty/jquery.cookie",
                     },
                     shims : {
-                        'jquery.mobile' : ['jquery']
+                        'jquery.mobile' : ['jquery'],
+                        'jquery.cookie' : ['jquery']
                     },
                     useStrict: true,
                     optimize: "none",

@@ -1,4 +1,4 @@
-define(["jquery", "js/utils"], function ($, utils) {
+define(["jquery", "js/utils", "js/login"], function ($, utils, login) {
     "use strict";
 
     var logGroups = [],
@@ -49,7 +49,7 @@ define(["jquery", "js/utils"], function ($, utils) {
             End: timeRange.end
         };
         $.ajax({
-            url: "/r/logs?search=" + encodeURIComponent(JSON.stringify(search)),
+            url: "/r/logs?search=" + encodeURIComponent(JSON.stringify(search)) + "&" + login.getUrlParam(),
             error : function (request, textStatus, errorThrown) {
                 return;
             },
@@ -104,7 +104,7 @@ define(["jquery", "js/utils"], function ($, utils) {
 
     function populateStreams(group, next) {
         $.ajax({
-            url: "/r/loggroup/" + encodeURIComponent(group) + "/streams?token=" + encodeURIComponent(next),
+            url: "/r/loggroup/" + encodeURIComponent(group) + "/streams?token=" + encodeURIComponent(next) + "&" + login.getUrlParam(),
             error : function (request, textStatus, errorThrown) {
                 return;
             },
@@ -146,7 +146,7 @@ define(["jquery", "js/utils"], function ($, utils) {
 
     function populateLogGroupsReq(token) {
         $.ajax({
-            url: "/r/loggroups?token=" + encodeURIComponent(token),
+            url: "/r/loggroups?token=" + encodeURIComponent(token) + "&" + login.getUrlParam(),
             error : function (request, textStatus, errorThrown) {
                 fillInGroups();
                 return;

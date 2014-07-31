@@ -1,4 +1,4 @@
-define(["jquery", "js/utils"], function ($, utils) {
+define(["jquery", "js/utils", "js/login"], function ($, utils, login) {
     "use strict";
 
     var knownMetrics = {},
@@ -40,7 +40,7 @@ define(["jquery", "js/utils"], function ($, utils) {
 
     function loadMetrics(token) {
         $.ajax({
-            url: "/r/metric/list/?token=" + encodeURIComponent(token),
+            url: "/r/metric/list/?token=" + encodeURIComponent(token) + "&" + login.getUrlParam(),
             type: "GET",
             headers: {
                 "Region" : "us-west-2"
@@ -78,7 +78,7 @@ define(["jquery", "js/utils"], function ($, utils) {
 
     function getSavedGraphs() {
         $.ajax({
-            url: "/r/graphs",
+            url: "/r/graphs?" + login.getUrlParam(),
             error : function (request, textStatus, errorThrown) {
                 console.log("Failed to load saved graphs");
                 return;
@@ -125,7 +125,7 @@ define(["jquery", "js/utils"], function ($, utils) {
 
     function saveGraph(saveObj, callback) {
         $.ajax({
-            url: "/r/graph/?id=" + saveObj.Id,
+            url: "/r/graph/?id=" + saveObj.Id + "&" + login.getUrlParam(),
             data: JSON.stringify(saveObj),
             type: "POST",
             error : function (request, textStatus, errorThrown) {
@@ -157,7 +157,7 @@ define(["jquery", "js/utils"], function ($, utils) {
             ];
         }
         $.ajax({
-            url: "/r/metric?search=" + encodeURIComponent(JSON.stringify(query)),
+            url: "/r/metric?search=" + encodeURIComponent(JSON.stringify(query)) + "&" + login.getUrlParam(),
             headers: {
                 "Region" : "us-west-2"
             },
@@ -191,8 +191,10 @@ define(["jquery", "js/utils"], function ($, utils) {
         callback(knownGraphs[graphId]);
     }
 
-    loadMetrics("");
-    getSavedGraphs();
+    login.onLogin(function () {
+        loadMetrics("");
+        getSavedGraphs();
+    });
 
     return {
         findMetrics: findMetrics,

@@ -8,6 +8,12 @@ html
         script(src="//cdnjs.cloudflare.com/ajax/libs/rickshaw/1.4.6/rickshaw.min.js")
         script(src="/js/require.js", data-main="/js/index")
     body
+        div#login(data-role="page")
+            div(data-role="header")
+            div(data-role="content")
+                input#username(type="text" placeholder="username")
+                input#password(type="password" placeholder-text="password")
+                button#login.ui-btn Login
         div#home(data-role="page")
             div(data-role="header")
                 h4 Welcome!

@@ -1,4 +1,4 @@
-define(["jquery"], function ($) {
+define(["jquery", "js/login"], function ($, login) {
     "use strict";
 
 
@@ -18,12 +18,12 @@ define(["jquery"], function ($) {
                     .on("tap", loadDashboard)
             );
         }
-        dashboardRoot.tigger("create");
+        dashboardRoot.trigger("create");
     }
 
     function loadDashboards() {
         $.ajax({
-            url: "/r/dashboards",
+            url: "/r/dashboards?" + login.getUrlParam(),
             error : function (request, textStatus, errorThrown) {
                 console.log("Nope!");
                 return;
@@ -40,7 +40,7 @@ define(["jquery"], function ($) {
             return;
         }
         $.ajax({
-            url: "/r/dashboard",
+            url: "/r/dashboard?" + login.getUrlParam(),
             type: "PUT",
             data: JSON.stringify({Name: name}),
             error : function (request, textStatus, errorThrown) {
@@ -60,7 +60,7 @@ define(["jquery"], function ($) {
 
 
     $(document).on("pagecreate", "#dashboards", function () {
-        loadDashboards();
+        login.onLogin(loadDashboards);
         $("#dashboards #newDashboard").on("tap", newDashboard);
     });
     return;

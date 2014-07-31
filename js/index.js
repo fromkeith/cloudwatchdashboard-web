@@ -1,4 +1,7 @@
-require(["jquery", "js/graph", "js/logs", "js/utils", "js/dashboardListPage", "js/graphDataStore", "js/dashboardPage"], function ($, grapher, logs, utils, dataStore) {
+require(["jquery", "js/graph",
+    "js/logs", "js/utils", "js/dashboardListPage",
+    "js/graphDataStore", "js/dashboardPage",
+    "js/login"], function ($, grapher, logs, utils, lp, dataStore, dp, login) {
     "use strict";
 
     require(["jquery.mobile"]);
@@ -85,7 +88,9 @@ require(["jquery", "js/graph", "js/logs", "js/utils", "js/dashboardListPage", "j
             $("#metrics #graphs").append(g.getRoot()).trigger("create");
         });
     }).on("pagecreate", "#logs", function () {
-        logs.populateLogGroups($("#logGroups"), $("#logStreams"), $("#logcontent"));
+        login.onLogin(function () {
+            logs.populateLogGroups($("#logGroups"), $("#logStreams"), $("#logcontent"));
+        });
     });
     return;
 });
